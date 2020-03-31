@@ -47,8 +47,7 @@ void loop() {
   delay(1000);
 }
  
-void buttonTask(void *parameter)
-{
+void buttonTask(void *parameter) {
     bool lastState = HIGH;
     
     pinMode(BUTTON_PIN, INPUT);
@@ -67,8 +66,7 @@ void buttonTask(void *parameter)
     }
 }
  
-void potTask(void *parameter)
-{
+void potTask(void *parameter) {
     int lastPotValue = 0;
     const int MARGIN = 5;
 
