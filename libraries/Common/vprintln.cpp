@@ -1,7 +1,3 @@
-#define PP_NARG(...) \
-         PP_NARG_(__VA_ARGS__,PP_RSEQ_N())
-#define PP_NARG_(...) \
-         PP_ARG_N(__VA_ARGS__)
 #include <vprintln.h>
 
 void _variad(size_t argc, ...) {
