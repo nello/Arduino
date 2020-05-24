@@ -3,16 +3,17 @@
 // controls
 #define BUTTON_PIN 34
 #define POT_PIN 35
-#define CHANNEL_COUNT 3
+#define CHANNEL_COUNT 5
 
 // setting PWM properties
-#define LED_PIN 16    // 16 corresponds to GPIO16
-#define FQ 5000
+#define LED_PIN 15    // 15 corresponds to GPIO15
+#define FQ 1000
 #define LED_CHANNEL 0
 #define RESOLUTION 8
 
 // current channel being controlled by pot
 volatile int channelNumber = 0;
+int channelValues[CHANNEL_COUNT];
 
 void setup() {
   Serial.begin(112500);
@@ -46,6 +47,16 @@ void setup() {
 void loop() {
   delay(1000);
 }
+
+void report() {
+  vprint("[");
+  for (int i=0; i < CHANNEL_COUNT-1; ++i) { 
+      if (channelNumber == i) vprint("*");
+      vprint(channelValues[i], ", "); 
+  }
+  if (channelNumber == CHANNEL_COUNT-1) vprint("*");
+  vprintln(channelValues[CHANNEL_COUNT-1], "]");
+}
  
 void buttonTask(void *parameter) {
     bool lastState = HIGH;
@@ -59,7 +70,8 @@ void buttonTask(void *parameter) {
 
         if (currentState == HIGH && lastState == LOW) {
             channelNumber = (channelNumber + 1) % CHANNEL_COUNT;
-            vprintln("CHANNEL ", channelNumber);
+
+            report();
         }
         lastState = currentState;
         delay(5);
@@ -76,8 +88,9 @@ void potTask(void *parameter) {
         int potValue = analogRead(POT_PIN) >> 4;
         
         if (potValue < lastPotValue - MARGIN || potValue > lastPotValue + MARGIN) {
-            vprintln("CHANNEL ", channelNumber, ": ", potValue);
             ledcWrite(channelNumber, potValue);
+            channelValues[channelNumber] = potValue;
+            report();
             lastPotValue = potValue; 
         }
         delay(5);

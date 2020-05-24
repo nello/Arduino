@@ -33,7 +33,9 @@
          19,18,17,16,15,14,13,12,11,10, \
          9,8,7,6,5,4,3,2,1,0
 
-void _variad(size_t argc, ...);
+void _vprint(size_t argc, ...);
 
-#define vprintln(...) _variad(PP_NARG(__VA_ARGS__), __VA_ARGS__)
+#define vprint(...) _vprint(PP_NARG(__VA_ARGS__), __VA_ARGS__)
+
+#define vprintln(...) _vprint(PP_NARG(__VA_ARGS__), __VA_ARGS__); Serial.println();
 
