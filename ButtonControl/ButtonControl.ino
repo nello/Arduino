@@ -1,12 +1,12 @@
 #include <vprintln.h>
 
 // controls
-#define BUTTON_PIN 34
+#define BUTTON_PIN 33
 #define POT_PIN 35
 #define CHANNEL_COUNT 5
 
 // setting PWM properties
-#define LED_PIN 12    // GPIO12
+#define LED_PIN 14    // GPIO14 (GPIO13 is broken)
 #define FQ 1000
 #define LED_CHANNEL 0
 #define RESOLUTION 8
@@ -97,14 +97,14 @@ void potTask(void *parameter) {
         while (1) {
             int potValue = (analogRead(POT_PIN) >> 3) - 255;
             if (potValue > 255) potValue = 255;
-            
-            if (potValue < lastPotValue - MARGIN || potValue > lastPotValue + MARGIN) {
+
+            if (potValue < lastPotValue - MARGIN || potValue > lastPotValue + MARGIN) {                
                 if (potValue > 0) {
-                    ledcWrite(channelNumber, 0);
-                    ledcWrite(channelNumber + 1, potValue);
+                    ledcWrite(2 * channelNumber, 0);
+                    ledcWrite(2 * channelNumber + 1, potValue);
                 } else {
-                    ledcWrite(channelNumber, -potValue);
-                    ledcWrite(channelNumber + 1, 0);
+                    ledcWrite(2 * channelNumber, -potValue);
+                    ledcWrite(2 * channelNumber + 1, 0);
                 }
                 
                 channelValues[channelNumber] = potValue;
