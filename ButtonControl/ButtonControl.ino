@@ -7,7 +7,7 @@
 
 // setting PWM properties
 #define LED_PIN 14    // GPIO14 (GPIO13 is broken)
-#define FQ 1000
+#define FQ 3000
 #define LED_CHANNEL 0
 #define RESOLUTION 8
 
