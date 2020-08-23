@@ -5,49 +5,69 @@
 
 #define OUTPUT_PIN 12
 #define CHANNEL_COUNT 6
-#define RESOLUTION 30
-#define FQ 1
+#define RESOLUTION_X2 90
+#define FQ 10
+#define MAP_CHANNEL(CHANNEL) ((CHANNEL) == 20 ? 25 : (CHANNEL))   // GPIO20 isn't exposed on an ESP-32
 
 #define H_BRIDGE true
 
-const float STEP = PI/RESOLUTION;
-float wave_offsets[CHANNEL_COUNT]; 
-int fq_delay = FQ > 0 ? (1000 / FQ / RESOLUTION) : 0;
+int wave_outputs[CHANNEL_COUNT][RESOLUTION_X2]; 
+int fq_delay = FQ > 0 ? (1024 / FQ / RESOLUTION_X2) : 0;
+
+void setupChannels() {
+  // 2 h-bridge channels for each magnet
+  for (int i=0; i < CHANNEL_COUNT * 2; ++ i) {
+      pinMode(OUTPUT_PIN + i, OUTPUT);
+  }
+  pinMode(25, OUTPUT);
+}
+
+void setupWaveTable() {
+  // store precalculations
+  float x = 0;
+  for (int j = 0; j < RESOLUTION_X2; ++j) { 
+      for (int i=0; i < CHANNEL_COUNT; ++ i) {
+          wave_outputs[i][j] = sin(x + (i * TWO_PI / CHANNEL_COUNT)) * 256;
+      }
+      x = x + (2 * PI / RESOLUTION_X2);  
+  }
+
+  // print out table
+  vprint("\n");
+  for (int i=0; i < CHANNEL_COUNT; ++ i) {
+    for (int j = 0; j < RESOLUTION_X2; ++j) { 
+      vprint(wave_outputs[i][j], " ");
+    }
+    vprint("\n");
+  }
+}
 
 void setup() {
   delay(1000);
   Serial.begin(115200);
 
-  for (int i=0; i < CHANNEL_COUNT * 2; ++ i) {
-      pinMode(OUTPUT_PIN + i, OUTPUT);
-  }
-  pinMode(25, OUTPUT);
-  for (int i=0; i < CHANNEL_COUNT; ++ i) {
-      wave_offsets[i] = i * TWO_PI / CHANNEL_COUNT;
-  }
+  setupChannels();
+  setupWaveTable();
 }
 
 void loop()  {
-  for (float x = 0; x < TWO_PI; x = x + STEP) {
-      //int sum = 0;
+  for (int j = 0; j < RESOLUTION_X2; ++j) {
       for (int i=0; i < CHANNEL_COUNT; ++ i) {
-          int output = sin(x + wave_offsets[i]) * 256;   // better to build a wave table in setup()!!!
+          int output = wave_outputs[i][j];
    
           if (H_BRIDGE) {
             int output_channel = OUTPUT_PIN + (i << 1);
             if (output > 0) {
-                analogWrite(output_channel == 20 ? 25 : output_channel, output);
-                analogWrite(output_channel + 1, 0);
+                analogWrite(MAP_CHANNEL(output_channel), output);
+                analogWrite(MAP_CHANNEL(output_channel + 1), 0);
             } else {
-                analogWrite(output_channel == 20 ? 25 : output_channel, 0);
-                analogWrite(output_channel + 1, -output);
+                analogWrite(MAP_CHANNEL(output_channel), 0);
+                analogWrite(MAP_CHANNEL(output_channel + 1), -output);
             }
           } else {
             analogWrite(OUTPUT_PIN + i, output >> 1 + 127);
           }
-          //vprint(output, " "); sum = sum + output;
       }
-      //vprintln("= ", sum);
       if (fq_delay) delay(fq_delay); 
   }
 }
