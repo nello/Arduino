@@ -6,9 +6,8 @@
 #define OUTPUT_PIN 12
 #define CHANNEL_COUNT 6
 #define RESOLUTION_X2 90
-#define FQ 10
+#define FQ 1
 #define MAP_CHANNEL(CHANNEL) ((CHANNEL) == 20 ? 25 : (CHANNEL))   // GPIO20 isn't exposed on an ESP-32
-
 #define H_BRIDGE true
 
 int wave_outputs[CHANNEL_COUNT][RESOLUTION_X2]; 
@@ -33,6 +32,7 @@ void setupWaveTable() {
   }
 
   // print out table
+  /*
   vprint("\n");
   for (int i=0; i < CHANNEL_COUNT; ++ i) {
     for (int j = 0; j < RESOLUTION_X2; ++j) { 
@@ -40,6 +40,7 @@ void setupWaveTable() {
     }
     vprint("\n");
   }
+  */
 }
 
 void setup() {

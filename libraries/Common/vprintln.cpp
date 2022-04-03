@@ -14,4 +14,3 @@ void _vprint(size_t argc, ...) {
   }
   va_end(ap);
 }
-
