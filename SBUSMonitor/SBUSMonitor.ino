@@ -17,11 +17,12 @@ void loop() {
   if (sbus_rx.Read()) {
     /* Grab the received data */
     sbus_data = sbus_rx.ch();
+    
     /* Display the received data */
-    //for (int8_t i = 0; i < bfs::SbusRx::NUM_CH(); i++) {
-    //  Serial.print(sbus_data[i]);
-    //  Serial.print("\t");
-    //}
+    for (int8_t i = 0; i < bfs::SbusRx::NUM_CH(); i++) {
+      Serial.print(sbus_data[i]);
+      Serial.print("\t");
+    }
     /* Display lost frames and failsafe data */
     Serial.print(sbus_rx.lost_frame());
     Serial.print("\t");
