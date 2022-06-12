@@ -10,7 +10,7 @@ void setup() {
   while (!Serial) {}
   
   /* Begin the SBUS communication */
-  sbus_rx.Begin(16, 17);
+  sbus_rx.Begin(16, 17, false);   // UNINVERTED
 }
 
 void loop() {

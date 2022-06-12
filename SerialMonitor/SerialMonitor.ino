@@ -8,7 +8,7 @@ int j;
 void setup() {
       Serial.begin(115200);
       while (!Serial) {}
-      Serial2.begin(100000);    // RX2
+      Serial2.begin(19200);    // RX2 - 100,000 for SBUS
       j = 0;
 }
 

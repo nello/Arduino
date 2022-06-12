@@ -22,7 +22,7 @@ int scale(int value) {
 void setup() {
       Serial.begin(115200);
       while (!Serial) {}
-      sbus_tx.Begin(18, 19);  // output (pins may be wrong)
+      sbus_tx.Begin(18, 19, false);  // output - UNINVERTED!
       Serial2.begin(100000);    // RX2
       j = 0;
 }
@@ -36,7 +36,8 @@ void loop() {
         }
     }
 
-    if (j == CHANNELS) {          
+    if (j == CHANNELS) {      
+        /*    
         Serial.print("Channels");
         for(uint8_t i=0; i < CHANNELS; i++) {
             Serial.print(" ");
@@ -44,7 +45,7 @@ void loop() {
             Serial.print(":");
             Serial.print(channel[i], DEC);
         }
-        Serial.println();
+        Serial.println(); */
         j = 0;
 
         for (uint8_t i=0; i < CHANNELS; i++) {
