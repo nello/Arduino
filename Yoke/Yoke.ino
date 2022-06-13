@@ -3,6 +3,9 @@
 //
 
 #include "USBHost_t41.h"
+#include "ps4Helpers.h"
+#include "sbusHelpers.h"
+#include "deviceMapper.h"
 
 USBHost myusb;
 
@@ -24,15 +27,11 @@ uint8_t joystick_left_trigger_value[COUNT_JOYSTICKS] = {0};
 uint8_t joystick_right_trigger_value[COUNT_JOYSTICKS] = {0};
 uint64_t joystick_full_notify_mask = (uint64_t) - 1;
 
-int psAxis[64];
 int user_axis[64];
 uint32_t buttons_prev = 0;
 bool show_changed_only = false;
 
 
-//=============================================================================
-// Setup
-//=============================================================================
 void setup()
 {  
   char driver_name[16];
@@ -86,7 +85,7 @@ void processJoystickInputChanges() {
             Serial.printf(" %d:%d", i, joysticks[joystick_index].getAxis(i));
           }
         }
-      } else /*default*/ {
+      } else /* default! */ {
         for (uint8_t i = 0; axis_mask != 0; i++, axis_mask >>= 1) {
           if (axis_mask & 1) {
             Serial.printf(" %d:%d", i, joysticks[joystick_index].getAxis(i));
@@ -96,7 +95,7 @@ void processJoystickInputChanges() {
       
       // game controllers
       for (uint8_t i = 0; i<64; i++) {
-          psAxis[i] = joysticks[joystick_index].getAxis(i);
+          PS4::psAxis[i] = joysticks[joystick_index].getAxis(i);
       }
       switch (joysticks[joystick_index].joystickType()) {
         uint8_t ltv;
@@ -106,7 +105,7 @@ void processJoystickInputChanges() {
           break;
           
         case JoystickController::PS4:
-          printAngles();
+          PS4::printAngles();
           ltv = joysticks[joystick_index].getAxis(3);
           rtv = joysticks[joystick_index].getAxis(4);
           if ((ltv != joystick_left_trigger_value[joystick_index]) || (rtv != joystick_right_trigger_value[joystick_index])) {
