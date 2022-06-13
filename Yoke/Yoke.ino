@@ -55,7 +55,8 @@ void setup()
   Serial1.begin(2000000);
   while (!Serial) ; // wait for Arduino Serial Monitor
   Serial.println("\n\nUSB Host Joystick Testing");
-  
+
+  SBUS::sbus_init();
   myusb.begin();
 }
 
@@ -68,16 +69,56 @@ void loop()
 }
 
 
+void processDeviceListChanges() {
+  for (uint8_t i = 0; i < COUNT_DEVICES; i++) {
+    if (*drivers[i] != driver_active[i]) {
+      if (driver_active[i]) {
+        Serial.printf("*** Device %s %x:%x - disconnected ***\n", driver_names[i], drivers[i]->idVendor(), drivers[i]->idProduct());
+        driver_active[i] = false;
+      } else {
+        Serial.printf("*** Device %s %x:%x - connected ***\n", driver_names[i], drivers[i]->idVendor(), drivers[i]->idProduct());
+        driver_active[i] = true;
+
+        const uint8_t *psz = drivers[i]->manufacturer();
+        if (psz && *psz) Serial.printf("  manufacturer: %s\n", psz);
+        psz = drivers[i]->product();
+        if (psz && *psz) Serial.printf("  product: %s\n", psz);
+        psz = drivers[i]->serialNumber();
+        if (psz && *psz) Serial.printf("  Serial: %s\n", psz);
+      }
+    }
+  }
+}
+
+
 void processJoystickInputChanges() {  
   for (int joystick_index = 0; joystick_index < COUNT_JOYSTICKS; joystick_index++) {
-    
     if (joysticks[joystick_index].available()) {
       uint64_t axis_mask = joysticks[joystick_index].axisMask();
       uint64_t axis_changed_mask = joysticks[joystick_index].axisChangedMask();
       uint32_t buttons = joysticks[joystick_index].getButtons();
+      
       Serial.printf("Joystick(%d): buttons = %x", joystick_index, buttons);
       //Serial.printf(" AMasks: %x %x:%x", axis_mask, (uint32_t)(user_axis_mask >> 32), (uint32_t)(user_axis_mask & 0xffffffff));
       //Serial.printf(" M: %lx %lx", axis_mask, joysticks[joystick_index].axisChangedMask());
+
+      Map::Device* device = Map::find_device(joysticks[joystick_index].idVendor(), joysticks[joystick_index].idProduct());
+      if (device) {
+        int16_t channels[SBUS_CHANNELS] = { 0 };
+        
+        Serial.printf("DEVICE MAP: %s\n", device->name);
+
+        for (uint8_t i = 0; axis_mask != 0; i++, axis_mask >>= 1) {
+          if (axis_mask & 1) {
+            Map::map_device(device, channels, i, joysticks[joystick_index].getAxis(i));
+          }
+        }
+        for (int i = 0; i < SBUS_CHANNELS; ++i) {
+          Serial.printf(" %d:%d", i, channels[i]);
+        }
+        Serial.println("");
+        SBUS::sbus_send(channels);
+      }
       
       if (show_changed_only) {
         for (uint8_t i = 0; axis_changed_mask != 0; i++, axis_changed_mask >>= 1) {
@@ -159,28 +200,6 @@ void processJoystickInputChanges() {
 
       Serial.println();
       joysticks[joystick_index].joystickDataClear();
-    }
-  }
-}
-
-
-void processDeviceListChanges() {
-  for (uint8_t i = 0; i < COUNT_DEVICES; i++) {
-    if (*drivers[i] != driver_active[i]) {
-      if (driver_active[i]) {
-        Serial.printf("*** Device %s - disconnected ***\n", driver_names[i]);
-        driver_active[i] = false;
-      } else {
-        Serial.printf("*** Device %s %x:%x - connected ***\n", driver_names[i], drivers[i]->idVendor(), drivers[i]->idProduct());
-        driver_active[i] = true;
-
-        const uint8_t *psz = drivers[i]->manufacturer();
-        if (psz && *psz) Serial.printf("  manufacturer: %s\n", psz);
-        psz = drivers[i]->product();
-        if (psz && *psz) Serial.printf("  product: %s\n", psz);
-        psz = drivers[i]->serialNumber();
-        if (psz && *psz) Serial.printf("  Serial: %s\n", psz);
-      }
     }
   }
 }

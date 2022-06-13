@@ -4,8 +4,9 @@
 #include <Arduino.h>
 #include "sbus.h"
 
+#define SBUS_CHANNELS 16
+
 namespace SBUS {
-  #define CHANNELS 16
   
   /* radio definitions */
   typedef struct {
@@ -21,11 +22,11 @@ namespace SBUS {
   bfs::SbusTx sbus_tx(&Serial1);
   
   /* SBUS output channels */
-  std::array<int16_t, CHANNELS> sbus_channels;
+  std::array<int16_t, SBUS_CHANNELS> _channels;
 
   
-  /* _scale_for_radio() - scales input values in range [0..1) for our radio */
-  int _scale_for_radio(int value, Radio radio=Tx16s, int step=255) {
+  /* _scale_for_radio() - scales input values in range [0..1023) for our radio */
+  int _scale_for_radio(int value, Radio radio=Tx16s, int step=1023) {
     return ((int)(value * (radio.high - radio.low) / step) + radio.low) & 0x7ff;
   }
 
@@ -49,11 +50,11 @@ namespace SBUS {
     Serial.println();
     */
   
-    for (uint8_t i=0; i < CHANNELS; i++) {
-        sbus_channels[i] = _scale_for_radio(channels[i], Tx16s);
+    for (uint8_t i=0; i < SBUS_CHANNELS; i++) {
+      _channels[i] = _scale_for_radio(channels[i], Tx16s);
     }
   
-    sbus_tx.ch(sbus_channels);
+    sbus_tx.ch(_channels);
     sbus_tx.Write();
   }
 }

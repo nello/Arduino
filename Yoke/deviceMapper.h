@@ -14,7 +14,7 @@ namespace Map {
     char const *name;
     uint16_t vendor_id;
     uint16_t product_id;
-    Mapping mappings[10];
+    Mapping mappings[10];   // just some limit
   } Device;
   
   Device yoke = {
@@ -44,7 +44,30 @@ namespace Map {
     }
   };
 
-  Device devices[3] = { yoke, pedals, ps4 };
+  Device devices[] = { yoke, pedals, ps4 };
+
+  Device *find_device(uint16_t vendor_id, uint16_t product_id) {
+    int n = sizeof(devices)/sizeof(Device);
+    Serial.printf("%d devices\n", n);
+    
+    for (int i=0; i < n; ++i) {
+      Device* d = &devices[i];
+      if (d->vendor_id == vendor_id && d->product_id == product_id) {
+        return d;
+      }
+    }
+    return NULL;
+  }
+
+  // scale all values from 0..1023
+  void map_device(Device* device, int16_t channels[], int input, int value) {
+    for (int i=0; device->mappings[i].name != NULL; ++i) {
+      Mapping* mapping = &device->mappings[i];
+      if (mapping->input == input) {
+        channels[mapping->output] = (value - mapping->low) * 1023 / (mapping->high - mapping->low);
+      }
+    }
+  }
 }
 
 #endif // DEVICE_MAPPER
