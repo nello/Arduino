@@ -1,5 +1,5 @@
 //
-// Yoke + pedals USB -> SBU (Teensy 4.1)
+// Yoke + pedals USB -> SBUS (Teensy 4.1)
 //
 
 #include "USBHost_t41.h"
@@ -106,33 +106,38 @@ void processJoystickInputChanges() {
       if (device) {
         int16_t channels[SBUS_CHANNELS] = { 0 };
         
-        Serial.printf("DEVICE MAP: %s\n", device->name);
+        Serial.printf("\nDEVICE MAP: %s\n", device->name);
 
         for (uint8_t i = 0; axis_mask != 0; i++, axis_mask >>= 1) {
           if (axis_mask & 1) {
+            Serial.printf(" %d:%d", i, joysticks[joystick_index].getAxis(i));
             Map::map_device(device, channels, i, joysticks[joystick_index].getAxis(i));
           }
         }
+        Serial.print("\nSBUS: ");
         for (int i = 0; i < SBUS_CHANNELS; ++i) {
           Serial.printf(" %d:%d", i, channels[i]);
         }
         Serial.println("");
         SBUS::sbus_send(channels);
       }
-      
+
+      /*
       if (show_changed_only) {
         for (uint8_t i = 0; axis_changed_mask != 0; i++, axis_changed_mask >>= 1) {
           if (axis_changed_mask & 1) {
             Serial.printf(" %d:%d", i, joysticks[joystick_index].getAxis(i));
           }
         }
-      } else /* default! */ {
+      } else {
+        // default
         for (uint8_t i = 0; axis_mask != 0; i++, axis_mask >>= 1) {
           if (axis_mask & 1) {
             Serial.printf(" %d:%d", i, joysticks[joystick_index].getAxis(i));
           }
         }
       }
+      */
       
       // game controllers
       for (uint8_t i = 0; i<64; i++) {
@@ -152,7 +157,8 @@ void processJoystickInputChanges() {
           if ((ltv != joystick_left_trigger_value[joystick_index]) || (rtv != joystick_right_trigger_value[joystick_index])) {
             joystick_left_trigger_value[joystick_index] = ltv;
             joystick_right_trigger_value[joystick_index] = rtv;
-            joysticks[joystick_index].setRumble(ltv, rtv);
+            //joysticks[joystick_index].setRumble(ltv, rtv); <- works, but is just annoying
+            //Serial.printf(" Set Rumble %d %d", ltv, rtv);
           }
           break;
 
