@@ -58,6 +58,15 @@ namespace Map {
     }
   };
 
+  Device joystick = {
+    "Default Joystick (Logitech Attack 3)", 0x46d, 0xc214, {
+      {"up", 1, 130, 255, 3, 511, 512},
+      {"down", 1, 126, 0, 3, 512, 512},
+      {"left", 0, 126, 0, 2, 512, 512},
+      {"right", 0, 130, 255, 2, 511, 512},
+    }
+  };
+
   Device devices[] = { yoke, pedals, ps4 };
 
   Device *find_device(uint16_t vendor_id, uint16_t product_id) {
@@ -70,7 +79,9 @@ namespace Map {
         return device;
       }
     }
-    return NULL;
+
+    // default
+    return &joystick;
   }
 
   // scale all values from 0..RESOLUTION-1

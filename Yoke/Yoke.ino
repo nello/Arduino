@@ -30,6 +30,7 @@ uint64_t joystick_full_notify_mask = (uint64_t) - 1;
 int user_axis[64];
 uint32_t buttons_prev = 0;
 bool show_changed_only = false;
+int16_t channels[SBUS_CHANNELS] = { 0 };
 
 
 void setup()
@@ -60,16 +61,22 @@ void setup()
   myusb.begin();
 }
 
-
+int tick = 0;
 void loop()
 {
   myusb.Task();
-  processDeviceListChanges();
-  processJoystickInputChanges();
+  processDeviceListChanges(channels);
+  processJoystickInputChanges(channels);
+
+  // keep-alive
+  if (++tick == 100000) {
+    SBUS::sbus_send(channels);
+    tick = 0;
+  }
 }
 
 
-void processDeviceListChanges() {
+void processDeviceListChanges(int16_t channels[]) {
   for (uint8_t i = 0; i < COUNT_DEVICES; i++) {
     if (*drivers[i] != driver_active[i]) {
       if (driver_active[i]) {
@@ -91,11 +98,11 @@ void processDeviceListChanges() {
 }
 
 
-void processJoystickInputChanges() {  
+void processJoystickInputChanges(int16_t channels[]) {  
   for (int joystick_index = 0; joystick_index < COUNT_JOYSTICKS; joystick_index++) {
     if (joysticks[joystick_index].available()) {
       uint64_t axis_mask = joysticks[joystick_index].axisMask();
-      uint64_t axis_changed_mask = joysticks[joystick_index].axisChangedMask();
+//      uint64_t axis_changed_mask = joysticks[joystick_index].axisChangedMask();
       uint32_t buttons = joysticks[joystick_index].getButtons();
       
       Serial.printf("Joystick(%d): buttons = %x", joystick_index, buttons);
@@ -103,9 +110,7 @@ void processJoystickInputChanges() {
       //Serial.printf(" M: %lx %lx", axis_mask, joysticks[joystick_index].axisChangedMask());
 
       Map::Device* device = Map::find_device(joysticks[joystick_index].idVendor(), joysticks[joystick_index].idProduct());
-      if (device) {
-        int16_t channels[SBUS_CHANNELS] = { 0 };
-        
+      if (device) {       
         Serial.printf("\nDEVICE MAP: %s\n", device->name);
 
         for (uint8_t i = 0; axis_mask != 0; i++, axis_mask >>= 1) {
@@ -138,7 +143,7 @@ void processJoystickInputChanges() {
         }
       }
       */
-      
+      /*
       // game controllers
       for (uint8_t i = 0; i<64; i++) {
           PS4::psAxis[i] = joysticks[joystick_index].getAxis(i);
@@ -184,7 +189,8 @@ void processJoystickInputChanges() {
           }
           break;
       }
-
+      */
+      
       // buttons
       if (buttons != buttons_prev) {
         if (joysticks[joystick_index].joystickType() == JoystickController::PS3) {
@@ -206,6 +212,6 @@ void processJoystickInputChanges() {
 
       Serial.println();
       joysticks[joystick_index].joystickDataClear();
-    }
+    } 
   }
 }
