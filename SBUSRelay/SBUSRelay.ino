@@ -4,9 +4,10 @@
 #define CHANNELS 16
 //#define SCALE_BASE=988         // Taranis
 //#define SCALE_TOP=2012         // Taranis
-#define SCALE_BASE 172          // FrSky, TX16S
-#define SCALE_TOP 1811          // FrSky, TX16S
+#define SCALE_BASE 172           // FrSky, TX16S
+#define SCALE_TOP 1811           // FrSky, TX16S
 #define SCALE_RANGE (SCALE_TOP - SCALE_BASE)
+
 
 //int16_t channel[CHANNELS] = {0};
 std::array<int16_t, CHANNELS> channel;
@@ -20,11 +21,16 @@ int scale(int value) {
 }
 
 void setup() {
-      Serial.begin(115200);
-      while (!Serial) {}
-      sbus_tx.Begin(18, 19, false);  // output - UNINVERTED!
-      Serial2.begin(100000);    // RX2
-      j = 0;
+  Serial.begin(115200);
+  while (!Serial) {}
+#if defined(ESP32)  
+  sbus_tx.Begin(18, 19, false);  // output - UNINVERTED!
+#else
+  sbus_tx.Begin(false);          // works for Teensy (now)
+#endif
+
+  Serial2.begin(100000);    // RX2
+  j = 0;
 }
 
 void loop() {
