@@ -7,6 +7,8 @@
 #include "sbusHelpers.h"
 #include "deviceMapper.h"
 
+#define LED 13
+
 USBHost myusb;
 
 #define COUNT_HUBS 1
@@ -30,7 +32,6 @@ uint64_t joystick_full_notify_mask = (uint64_t) - 1;
 int user_axis[64];
 uint32_t buttons_prev = 0;
 bool show_changed_only = false;
-int16_t channels[SBUS_CHANNELS] = { 0 };
 
 
 void setup()
@@ -53,30 +54,38 @@ void setup()
     driver_names[i+COUNT_HUBS+COUNT_JOYSTICKS] = strdup(driver_name);
   }
   
-  Serial1.begin(2000000);
-  while (!Serial) ; // wait for Arduino Serial Monitor
-  Serial.println("\n\nUSB Host Joystick Testing");
+//  Serial1.begin(2000000);
+  while (!Serial) {
+    // wait for Arduino Serial Monitor
+  }
+  Serial.println("USB to SBUS");
 
-  SBUS::sbus_init();
+  SBUS::sbus_init(&Serial1);
   myusb.begin();
+  pinMode(LED, OUTPUT);
 }
 
 int tick = 0;
 void loop()
 {
   myusb.Task();
-  processDeviceListChanges(channels);
-  processJoystickInputChanges(channels);
+  processDeviceListChanges();
+  processJoystickInputChanges();
 
   // keep-alive
-  if (++tick == 100000) {
-    SBUS::sbus_send(channels);
+  tick++;
+  delay(10);
+  if (tick == 100) {
+    SBUS::sbus_send();
     tick = 0;
+    digitalWrite(LED, HIGH);
+  } else if (tick == 50) {
+    digitalWrite(LED, LOW);
   }
 }
 
 
-void processDeviceListChanges(int16_t channels[]) {
+void processDeviceListChanges() {
   for (uint8_t i = 0; i < COUNT_DEVICES; i++) {
     if (*drivers[i] != driver_active[i]) {
       if (driver_active[i]) {
@@ -98,7 +107,7 @@ void processDeviceListChanges(int16_t channels[]) {
 }
 
 
-void processJoystickInputChanges(int16_t channels[]) {  
+void processJoystickInputChanges() {  
   for (int joystick_index = 0; joystick_index < COUNT_JOYSTICKS; joystick_index++) {
     if (joysticks[joystick_index].available()) {
       uint64_t axis_mask = joysticks[joystick_index].axisMask();
@@ -112,19 +121,15 @@ void processJoystickInputChanges(int16_t channels[]) {
       Map::Device* device = Map::find_device(joysticks[joystick_index].idVendor(), joysticks[joystick_index].idProduct());
       if (device) {       
         Serial.printf("\nDEVICE MAP: %s\n", device->name);
-
         for (uint8_t i = 0; axis_mask != 0; i++, axis_mask >>= 1) {
           if (axis_mask & 1) {
             Serial.printf(" %d:%d", i, joysticks[joystick_index].getAxis(i));
-            Map::map_device(device, channels, i, joysticks[joystick_index].getAxis(i));
+            Map::map_device(device, SBUS::channels, i, joysticks[joystick_index].getAxis(i));
           }
         }
-        Serial.print("\nSBUS: ");
-        for (int i = 0; i < SBUS_CHANNELS; ++i) {
-          Serial.printf(" %d:%d", i, channels[i]);
-        }
-        Serial.println("");
-        SBUS::sbus_send(channels);
+
+        SBUS::sbus_print();
+        SBUS::sbus_send(true);
       }
 
       /*
