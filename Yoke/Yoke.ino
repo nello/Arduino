@@ -33,11 +33,19 @@ int user_axis[64];
 uint32_t buttons_prev = 0;
 bool show_changed_only = false;
 
-
 void setup()
 {  
+  // prepare outputs
+  while (!Serial) {
+    // wait for Arduino Serial Monitor
+  }
+  Serial.println("USB to SBUS");
+  SBUS::sbus_init(&Serial1);        // SBUS output on Serial1
+  Serial2.begin(115200);            // UART output on Serial2
+  pinMode(LED, OUTPUT);             // blinking light
+
+  // prepare hid drivers
   char driver_name[16];
-  
   for (int i=0; i < COUNT_HUBS; ++i) {
     sprintf(driver_name, "hub[%d]", i);
     drivers[i] = &hubs[i]; 
@@ -53,35 +61,9 @@ void setup()
     drivers[i+COUNT_HUBS+COUNT_JOYSTICKS] = &hids[i];
     driver_names[i+COUNT_HUBS+COUNT_JOYSTICKS] = strdup(driver_name);
   }
-  
-//  Serial1.begin(2000000);
-  while (!Serial) {
-    // wait for Arduino Serial Monitor
-  }
-  Serial.println("USB to SBUS");
 
-  SBUS::sbus_init(&Serial1);
-  myusb.begin();
-  pinMode(LED, OUTPUT);
-}
-
-int tick = 0;
-void loop()
-{
-  myusb.Task();
-  processDeviceListChanges();
-  processJoystickInputChanges();
-
-  // keep-alive
-  tick++;
-  delay(10);
-  if (tick == 100) {
-    SBUS::sbus_send();
-    tick = 0;
-    digitalWrite(LED, HIGH);
-  } else if (tick == 50) {
-    digitalWrite(LED, LOW);
-  }
+  // prepare input
+  myusb.begin();                    // USB Host input
 }
 
 
@@ -129,7 +111,9 @@ void processJoystickInputChanges() {
         }
 
         SBUS::sbus_print();
-        SBUS::sbus_send(true);
+        if (SBUS::sbus_send(true)) {
+          SBUS::uart_send(&Serial2); 
+        }
       }
 
       /*
@@ -218,5 +202,26 @@ void processJoystickInputChanges() {
       Serial.println();
       joysticks[joystick_index].joystickDataClear();
     } 
+  }
+}
+
+
+/* main() */
+int tick = 0;
+void loop()
+{
+  myusb.Task();
+  processDeviceListChanges();
+  processJoystickInputChanges();
+
+  // keep-alive
+  tick++;
+  delay(10);
+  if (tick == 100) {
+    SBUS::sbus_send();
+    tick = 0;
+    digitalWrite(LED, HIGH);
+  } else if (tick == 50) {
+    digitalWrite(LED, LOW);
   }
 }
