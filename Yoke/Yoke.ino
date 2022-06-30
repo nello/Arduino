@@ -33,13 +33,14 @@ int user_axis[64];
 uint32_t buttons_prev = 0;
 bool show_changed_only = false;
 
+/* setup() */
 void setup()
 {  
-  // prepare outputs
-  while (!Serial) {
-    // wait for Arduino Serial Monitor
-  }
+  // wait for Arduino Serial Monitor
+  //while (!Serial) {}
   Serial.println("USB to SBUS");
+
+  // prepare outputs
   SBUS::sbus_init(&Serial1);        // SBUS output on Serial1
   Serial2.begin(115200);            // UART output on Serial2
   pinMode(LED, OUTPUT);             // blinking light
@@ -66,7 +67,7 @@ void setup()
   myusb.begin();                    // USB Host input
 }
 
-
+/* processDeviceListChanges() - info only */
 void processDeviceListChanges() {
   for (uint8_t i = 0; i < COUNT_DEVICES; i++) {
     if (*drivers[i] != driver_active[i]) {
@@ -88,7 +89,7 @@ void processDeviceListChanges() {
   }
 }
 
-
+/* processJoystickInputChanges() - we only use joystick bits of this right now, buttons to come */
 void processJoystickInputChanges() {  
   for (int joystick_index = 0; joystick_index < COUNT_JOYSTICKS; joystick_index++) {
     if (joysticks[joystick_index].available()) {
@@ -112,7 +113,7 @@ void processJoystickInputChanges() {
 
         SBUS::sbus_print();
         if (SBUS::sbus_send(true)) {
-          SBUS::uart_send(&Serial2); 
+          SBUS::uart_send(&Serial2); // works for Serial too
         }
       }
 
@@ -204,7 +205,6 @@ void processJoystickInputChanges() {
     } 
   }
 }
-
 
 /* main() */
 int tick = 0;

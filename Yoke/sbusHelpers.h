@@ -23,13 +23,11 @@ namespace SBUS {
   Radio Taranis { 988, 2012 };
   Radio Frsky { 172, 1811 };
   Radio Tx16s { 172, 1811 };
-
   
   /* scale_for_radio() - scales input values in range [0..1023) for our radio */
   int scale_for_radio(int value, Radio radio=Tx16s, int step=1023) {
     return ((int)(value * (radio.high - radio.low) / step) + radio.low) & 0x7ff;
   }
-
   
   /* sbus_init() - start SBUS */
   void sbus_init(HardwareSerial *serial) {
@@ -37,7 +35,6 @@ namespace SBUS {
     sbus_tx = new bfs::SbusTx(serial);
     sbus_tx->Begin(false);  // UNINVERTED!
   }
-
   
   /* sbus_send() - send 16 channels of data to the radio */
   bool sbus_send(bool changed_only=false) {   
@@ -61,11 +58,11 @@ namespace SBUS {
   }
 
 
-  /* uart_send() - send 16 channels of hex numbers to our favourite serial port */
+  /* uart_send() - send 16 channels of hex numbers [0-1023] to our favourite serial port */
   void uart_send(void* uart) {
     int j = 0;
     for (uint8_t i=0; i < NUM_CHANNELS; i++, j++) {
-      sprintf(&text_buffer[j++], "%02x", channels[i] & 0xff);
+      sprintf(&text_buffer[j++], "%03x", channels[i] & 0x3ff);
     }
     text_buffer[j++] = '\n';
     text_buffer[j] = 0;
@@ -78,7 +75,6 @@ namespace SBUS {
     //serial->print(text_buffer);
     //serial->write(text_buffer, sizeof(text_buffer));
   }
-
 
   /* sbus_print() - print it */
   void sbus_print() {
