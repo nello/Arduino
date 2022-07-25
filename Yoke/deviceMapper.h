@@ -5,12 +5,14 @@
 #ifndef DEVICE_MAPPER
 #define DEVICE_MAPPER
 
+#include "sbusHelpers.h"
+
 #define MIN(x, y)     (((x) < (y)) ? (x) : (y))
 #define MAX(x, y)     (((x) > (y)) ? (x) : (y))
 #define ABS(x)        (((x) < 0) ? -(x) : (x))
 #define DEFAULT(x, y) (((x) == 0) ? (y) : (x))    
 
-namespace Map {
+namespace Mapper {
   #define RESOLUTION    1024
   #define RESOLUTION_1  ((RESOLUTION) - 1)
   
@@ -52,7 +54,7 @@ namespace Map {
 
   Device ps4 = {
     "Sony PS4 Controller", 0x54c, 0x5c4, {
-      {"acceleration", 4, 0, 240, 0},
+      {"acceleration", 4, 0, 245, 0},
       {"braking", 3, 0, 255, 1},
       {"left", 2, 133, 0, 2, 512, 512},
       {"right", 2, 138, 255, 2, 511, 512},
@@ -88,38 +90,30 @@ namespace Map {
   }
 
   // scale all values from 0..RESOLUTION-1
-  void map_device(Device* device, int16_t channels[], int input, int value) {
-    // zero channels
+  void map_outputs(Device* device, int16_t outputs[], int input, int value) {
+    // zero output channels
     for (int i=0; device->mappings[i].name != NULL; ++i) {
       Mapping* mapping = &device->mappings[i];
-      if (mapping->input == input) {
-        channels[mapping->output] = mapping->offset;
+      if (mapping->input == input && mapping->output < SBUS::NUM_CHANNELS) {
+        if (MIN(mapping->low, mapping->high) <= value && value <= MAX(mapping->low, mapping->high)) {
+          outputs[mapping->output] = mapping->offset;
+        } else if (outputs[mapping->output] == 0) {
+          outputs[mapping->output] = mapping->offset;
+        }
       }
     }
 
     // add scaled outputs
     for (int i=0; device->mappings[i].name != NULL; ++i) {
       Mapping* mapping = &device->mappings[i];
-      if (mapping->input == input) {
-        int outputValue = value;
-
-        // fix out-of-range values
-        if (outputValue < MIN(mapping->low, mapping->high)) {
-          outputValue = MIN(mapping->low, mapping->high);
-        } else if (outputValue > MAX(mapping->low, mapping->high)) {
-          outputValue = MAX(mapping->low, mapping->high);
-        }
-
+      if (mapping->input == input && mapping->output < SBUS::NUM_CHANNELS) {
         // scale values by range and resolution
-        if (MIN(mapping->low, mapping->high) <= outputValue && outputValue <= MAX(mapping->low, mapping->high)) {
-          channels[mapping->output] += (outputValue - mapping->low) * DEFAULT(mapping->resolution, RESOLUTION_1) / ABS(mapping->high - mapping->low);
+        if (MIN(mapping->low, mapping->high) <= value && value <= MAX(mapping->low, mapping->high)) {
+          outputs[mapping->output] += (value - mapping->low) * DEFAULT(mapping->resolution, RESOLUTION_1) / ABS(mapping->high - mapping->low);
         }
 
         // flip any negative values
-        int mapped_value = channels[mapping->output];
-        if (mapped_value < 0) {
-          channels[mapping->output] = -mapped_value;
-        }
+        outputs[mapping->output] = ABS(outputs[mapping->output]);
       }
     }
   }

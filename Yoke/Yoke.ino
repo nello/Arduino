@@ -36,7 +36,7 @@ bool show_changed_only = false;
 /* setup() */
 void setup()
 {  
-  // wait for Arduino Serial Monitor
+  // wait for Arduino serial monitor
   //while (!Serial) {}
   Serial.println("USB to SBUS");
 
@@ -83,7 +83,7 @@ void processDeviceListChanges() {
         psz = drivers[i]->product();
         if (psz && *psz) Serial.printf("  product: %s\n", psz);
         psz = drivers[i]->serialNumber();
-        if (psz && *psz) Serial.printf("  Serial: %s\n", psz);
+        if (psz && *psz) Serial.printf("  serial: %s\n", psz);
       }
     }
   }
@@ -101,19 +101,20 @@ void processJoystickInputChanges() {
       //Serial.printf(" AMasks: %x %x:%x", axis_mask, (uint32_t)(user_axis_mask >> 32), (uint32_t)(user_axis_mask & 0xffffffff));
       //Serial.printf(" M: %lx %lx", axis_mask, joysticks[joystick_index].axisChangedMask());
 
-      Map::Device* device = Map::find_device(joysticks[joystick_index].idVendor(), joysticks[joystick_index].idProduct());
+      Mapper::Device* device = Mapper::find_device(joysticks[joystick_index].idVendor(), joysticks[joystick_index].idProduct());
       if (device) {       
-        Serial.printf("\nDEVICE MAP: %s\n", device->name);
+        Serial.printf("\nDEVICE MAPPER: %s\n", device->name);
         for (uint8_t i = 0; axis_mask != 0; i++, axis_mask >>= 1) {
           if (axis_mask & 1) {
-            Serial.printf(" %d:%d", i, joysticks[joystick_index].getAxis(i));
-            Map::map_device(device, SBUS::channels, i, joysticks[joystick_index].getAxis(i));
+            int value = joysticks[joystick_index].getAxis(i);
+            Serial.printf(" %d:%d", i, value);
+            Mapper::map_outputs(device, SBUS::channels, i, value);
           }
         }
 
         SBUS::sbus_print();
         if (SBUS::sbus_send(true)) {
-          SBUS::uart_send(&Serial2); // works for Serial too
+          SBUS::uart_send(&Serial); // works for Serial too
         }
       }
 

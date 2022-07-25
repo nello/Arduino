@@ -57,7 +57,6 @@ namespace SBUS {
     return false;
   }
 
-
   /* uart_send() - send 16 channels of hex numbers [0-1023] to our favourite serial port */
   void uart_send(void* uart) {
     int j = 0;
@@ -68,6 +67,7 @@ namespace SBUS {
     text_buffer[j] = 0;
 
     if (uart == &Serial) {
+      Serial.print("UART:  ");
       Serial.print(text_buffer);
     } else if (uart != NULL) {
       ((HardwareSerial *)uart)->print(text_buffer);
