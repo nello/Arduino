@@ -112,9 +112,10 @@ void processJoystickInputChanges() {
           }
         }
 
-        SBUS::sbus_print();
+        // send changes
         if (SBUS::sbus_send(true)) {
-          SBUS::uart_send(&Serial); // works for Serial too
+          SBUS::sbus_print();       // tell us what was sent
+          SBUS::uart_send(&Serial); // sent to UART
         }
       }
 
@@ -211,18 +212,26 @@ void processJoystickInputChanges() {
 int tick = 0;
 void loop()
 {
+  // process USB inputs
   myusb.Task();
   processDeviceListChanges();
   processJoystickInputChanges();
 
-  // keep-alive
-  tick++;
+  // wait 10ms
   delay(10);
-  if (tick == 100) {
-    SBUS::sbus_send();
-    tick = 0;
-    digitalWrite(LED, HIGH);
-  } else if (tick == 50) {
-    digitalWrite(LED, LOW);
+
+  // SBUS keep-alive (100ms)
+  if (tick % 10 == 0) {
+     SBUS::sbus_send();
   }
+
+  // flash led (500ms)
+  if (tick == 50) {
+    digitalWrite(LED, HIGH);
+  } else if (tick == 100) {
+    digitalWrite(LED, LOW);
+    tick = 0;
+  }
+  
+  tick++;
 }
