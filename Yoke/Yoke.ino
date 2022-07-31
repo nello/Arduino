@@ -67,6 +67,24 @@ void setup()
   myusb.begin();                    // USB Host input
 }
 
+
+/* blinkLed() */
+bool led_on = false;
+int led_ms = 0;
+void blinkLed() {
+  int ms = millis();
+  if (ms - led_ms > 30) {
+    if (led_on) {
+      digitalWrite(LED, LOW);
+      led_on = false;
+    } else {
+      digitalWrite(LED, HIGH);
+      led_on = true;
+    }
+    led_ms = ms;
+  }
+}
+
 /* processDeviceListChanges() - info only */
 void processDeviceListChanges() {
   for (uint8_t i = 0; i < COUNT_DEVICES; i++) {
@@ -116,6 +134,7 @@ void processJoystickInputChanges() {
         if (SBUS::sbus_send(true)) {
           SBUS::sbus_print();       // tell us what was sent
           SBUS::uart_send(&Serial); // sent to UART
+          blinkLed();
         }
       }
 
@@ -207,6 +226,7 @@ void processJoystickInputChanges() {
     } 
   }
 }
+
 
 /* main() */
 int tick = 0;
